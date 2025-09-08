@@ -6,7 +6,7 @@ extends Node2D
 ##
 
 @export_dir var tiles_root_path: String = "res://art/tiles_xyz"
-@export var tile_px: int = 256            # 256 (default gdal2tiles) or 512 if you used --tilesize=512
+@export var tile_px: int = 512            # 256 (default gdal2tiles) or 512 if you used --tilesize=512
 @export var load_radius: int = 2          # tiles beyond view to LOAD
 @export var unload_radius: int = 3        # tiles beyond view to KEEP (hysteresis)
 @export var tiles_per_frame: int = 6      # cap load work per frame
@@ -22,8 +22,8 @@ var _zoom_override: bool = false
 var _zoom_rules := [
 	[0.1, 17],  # very zoomed out  -> z17 (least detail)
 	[0.5, 18],
-	[1, 19],
-	[9.99, 20],  # very zoomed in   -> z20 (most detail)
+	[10, 19]
+	
 ]
 
 
@@ -55,11 +55,6 @@ var _last_max_y_idx: int = -1
 var _last_cam_pos: Vector2 = Vector2.INF
 var _last_cam_zoom: float = -1.0
 
-# Debug
-var _dbg_layer: CanvasLayer
-var _dbg: Label
-var _dbg_t: float = 0.0
-
 func _ready() -> void:
 	_camera = get_viewport().get_camera_2d()
 	if _camera:
@@ -85,15 +80,6 @@ func _ready() -> void:
 	# Prepare bounds for current zoom (for clamping)
 	_scan_bounds_for_zoom(_z_current)
 
-	if show_debug:
-		_dbg_layer = CanvasLayer.new()
-		add_child(_dbg_layer)
-		_dbg = Label.new()
-		_dbg.add_theme_color_override("font_color", Color.WHITE)
-		_dbg.set("theme_override_font_sizes/font_size", 14)
-		_dbg.position = Vector2(8, 8)
-		_dbg_layer.add_child(_dbg)
-
 	set_process(true)
 
 func _process(dt: float) -> void:
@@ -107,18 +93,7 @@ func _process(dt: float) -> void:
 	# else: keep the forced zoom level
 
 	_update_visible_tiles()
-	_drain_queue()
-
-	if show_debug:
-		_dbg_t += dt
-		if _dbg_t >= 0.25:
-			_dbg_t = 0.0
-			_dbg.text = "z=%d%s  loaded=%d  queue=%d" % [
-				_z_current,
-				" (MANUAL)" if _zoom_override else "",
-				_loaded.size(),
-				_load_queue.size()
-			]
+	_drain_queue()	
 
 # --- Zoom selection -----------------------------------------------------------
 
@@ -221,20 +196,20 @@ func _update_visible_tiles() -> void:
 	# Convert world -> tile indices at CURRENT zoom, anchored to base origin.
 	# world_x = ((x*s2b - _base_min_x) * tile_px)
 	#  => x = floor((world_x / tile_px + _base_min_x) / s2b)
-	var min_x_load: int = int(floor(min(tl.x, br.x) / tile_px + _base_min_x)) / s2b - load_radius
-	var max_x_load: int = int(floor(max(tl.x, br.x) / tile_px + _base_min_x)) / s2b + load_radius
-	var min_y_load: int = int(floor(min(tl.y, br.y) / tile_px + _base_min_y)) / s2b - load_radius
-	var max_y_load: int = int(floor(max(tl.y, br.y) / tile_px + _base_min_y)) / s2b + load_radius
+	var min_x_load: int = int((min(tl.x, br.x) / tile_px + _base_min_x) / s2b) - load_radius
+	var max_x_load: int = int((max(tl.x, br.x) / tile_px + _base_min_x) / s2b) + load_radius
+	var min_y_load: int = int((min(tl.y, br.y) / tile_px + _base_min_y) / s2b) - load_radius
+	var max_y_load: int = int((max(tl.y, br.y) / tile_px + _base_min_y) / s2b) + load_radius
 
 	# Clamp to dataset bounds at current zoom
 	min_x_load = max(min_x_load, _min_x);  max_x_load = min(max_x_load, _max_x)
 	min_y_load = max(min_y_load, _min_y);  max_y_load = min(max_y_load, _max_y)
 
 	# KEEP window (larger) for hysteresis
-	var min_x_keep: int = int(floor(min(tl.x, br.x) / tile_px + _base_min_x)) / s2b - unload_radius
-	var max_x_keep: int = int(floor(max(tl.x, br.x) / tile_px + _base_min_x)) / s2b + unload_radius
-	var min_y_keep: int = int(floor(min(tl.y, br.y) / tile_px + _base_min_y)) / s2b - unload_radius
-	var max_y_keep: int = int(floor(max(tl.y, br.y) / tile_px + _base_min_y)) / s2b + unload_radius
+	var min_x_keep: int = int((min(tl.x, br.x) / tile_px + _base_min_x) / s2b) - unload_radius
+	var max_x_keep: int = int((max(tl.x, br.x) / tile_px + _base_min_x) / s2b) + unload_radius
+	var min_y_keep: int = int((min(tl.y, br.y) / tile_px + _base_min_y) / s2b) - unload_radius
+	var max_y_keep: int = int((max(tl.y, br.y) / tile_px + _base_min_y) / s2b) + unload_radius
 
 	min_x_keep = max(min_x_keep, _min_x);  max_x_keep = min(max_x_keep, _max_x)
 	min_y_keep = max(min_y_keep, _min_y);  max_y_keep = min(max_y_keep, _max_y)

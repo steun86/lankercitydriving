@@ -29,7 +29,6 @@ var _btn_auto: Button
 var _btn_z17: Button
 var _btn_z18: Button
 var _btn_z19: Button
-var _btn_z20: Button
 
 func _ready() -> void:
 	# Fullscreen root so children can anchor
@@ -95,7 +94,7 @@ func _ready() -> void:
 		_auto_zoom()
 		# exclusivity: make Auto the only pressed one
 		_btn_auto.button_pressed = true
-		for b in [_btn_z17, _btn_z18, _btn_z19, _btn_z20]:
+		for b in [_btn_z17, _btn_z18, _btn_z19]:
 			if b: b.button_pressed = false
 	)
 	_btn_auto.button_pressed = true  # start in Auto
@@ -104,7 +103,7 @@ func _ready() -> void:
 	_btn_z17 = _make_zoom_btn("z17", func():
 		_force_zoom(17)
 		_btn_auto.button_pressed = false
-		for b in [_btn_z17, _btn_z18, _btn_z19, _btn_z20]:
+		for b in [_btn_z17, _btn_z18, _btn_z19]:
 			if b: b.button_pressed = (b == _btn_z17)
 	)
 	_row_zoom.add_child(_btn_z17)
@@ -112,7 +111,7 @@ func _ready() -> void:
 	_btn_z18 = _make_zoom_btn("z18", func():
 		_force_zoom(18)
 		_btn_auto.button_pressed = false
-		for b in [_btn_z17, _btn_z18, _btn_z19, _btn_z20]:
+		for b in [_btn_z17, _btn_z18, _btn_z19]:
 			if b: b.button_pressed = (b == _btn_z18)
 	)
 	_row_zoom.add_child(_btn_z18)
@@ -120,18 +119,12 @@ func _ready() -> void:
 	_btn_z19 = _make_zoom_btn("z19", func():
 		_force_zoom(19)
 		_btn_auto.button_pressed = false
-		for b in [_btn_z17, _btn_z18, _btn_z19, _btn_z20]:
+		for b in [_btn_z17, _btn_z18, _btn_z19]:
 			if b: b.button_pressed = (b == _btn_z19)
 	)
 	_row_zoom.add_child(_btn_z19)
 
-	_btn_z20 = _make_zoom_btn("z20", func():
-		_force_zoom(20)
-		_btn_auto.button_pressed = false
-		for b in [_btn_z17, _btn_z18, _btn_z19, _btn_z20]:
-			if b: b.button_pressed = (b == _btn_z20)
-	)
-	_row_zoom.add_child(_btn_z20)
+	
 
 	# Disable buttons for zoom folders that don't exist
 	if has_node(tile_streamer_path):
@@ -141,9 +134,7 @@ func _ready() -> void:
 			_btn_z17.disabled = not avail.has(17)
 			_btn_z18.disabled = not avail.has(18)
 			_btn_z19.disabled = not avail.has(19)
-			_btn_z20.disabled = not avail.has(20)
-
-	
+				
 	# --- TileBoxesDrawer (screen-space rectangles) ---
 	if show_tile_boxes:
 		var Drawer := preload("res://tile_boxes_drawer.gd") # adjust path if needed
@@ -153,6 +144,7 @@ func _ready() -> void:
 		add_child(boxes)  # child of CanvasLayer (drawn over world, under buttons)
 
 func _process(_dt: float) -> void:
+	
 	var lines: Array[String] = []
 
 	lines.append("Mode: " + ("Drive" if _mode == MODE_DRIVE else "Pan/Place"))

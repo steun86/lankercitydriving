@@ -1,15 +1,15 @@
 extends Node2D
 
 @export_dir var tiles_root_path: String = "res://art/tiles_xyz"
-@export var zoom_level: int = 20
-@export var tile_px: int = 256
+@export var zoom_level: int = 19
+@export var tile_px: int = 512
 
 @onready var cam: Camera2D = $Car/Camera2D
 @onready var car: CharacterBody2D = $Car
 @onready var overlay: CanvasLayer = $CanvasLayer
 
 @export var zoom_min: float = 0.0005
-@export var zoom_max: float = 2.5
+@export var zoom_max: float = 1.5
 @export var zoom_step: float = 1.1   # multiplicative per wheel tick
 var _target_zoom: float = 1.0
 

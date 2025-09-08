@@ -52,7 +52,7 @@ func _draw() -> void:
 
 		if show_fills:
 			draw_rect(r, fill_color, true)
-		draw_rect(r, line_color, false)
+			draw_rect(r, line_color, false)
 
 		if show_ids:
 			draw_string(_font, screen_pos + Vector2(4, 14),
