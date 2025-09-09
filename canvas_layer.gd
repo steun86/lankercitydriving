@@ -33,6 +33,7 @@ var _btn_z19: Button
 func _ready() -> void:
 	# Fullscreen root so children can anchor
 	_root = Control.new()
+	_root.mouse_filter = Control.MOUSE_FILTER_PASS
 	_root.anchor_left = 0; _root.anchor_top = 0; _root.anchor_right = 1; _root.anchor_bottom = 1
 	add_child(_root)
 

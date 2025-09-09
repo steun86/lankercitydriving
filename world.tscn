@@ -8,7 +8,7 @@
 [ext_resource type="Script" uid="uid://bjdyl6gnkau6m" path="res://tile_boxes_drawer.gd" id="6_dwbse"]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_gbfbk"]
-size = Vector2(10, 14.5)
+size = Vector2(18.999, 26)
 
 [node name="World" type="Node2D"]
 script = ExtResource("1_aqk2v")
@@ -18,13 +18,13 @@ position = Vector2(78835, 88898)
 script = ExtResource("3_dwbse")
 
 [node name="Sprite2D" type="Sprite2D" parent="Car"]
-position = Vector2(-6.76088, 6.76088)
-scale = Vector2(0.0153597, 0.0153597)
+position = Vector2(-0.812346, 12.7094)
+scale = Vector2(0.0269779, 0.0269779)
 texture = ExtResource("4_aqk2v")
 metadata/_edit_group_ = true
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="Car"]
-position = Vector2(-6.89844, 6.19922)
+position = Vector2(-0.5, 12)
 shape = SubResource("RectangleShape2D_gbfbk")
 metadata/_edit_group_ = true
 
@@ -45,10 +45,12 @@ script = ExtResource("5_dwbse")
 [node name="Label" type="Label" parent="CanvasLayer"]
 offset_right = 40.0
 offset_bottom = 23.0
+mouse_filter = 1
 
 [node name="TileBoxesDrawer" type="Control" parent="CanvasLayer"]
 layout_mode = 3
 anchors_preset = 0
 offset_right = 40.0
 offset_bottom = 40.0
+mouse_filter = 1
 script = ExtResource("6_dwbse")

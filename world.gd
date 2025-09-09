@@ -8,7 +8,7 @@ extends Node2D
 @onready var car: CharacterBody2D = $Car
 @onready var overlay: CanvasLayer = $CanvasLayer
 
-@export var zoom_min: float = 0.0005
+@export var zoom_min: float = 0.05
 @export var zoom_max: float = 1.5
 @export var zoom_step: float = 1.1   # multiplicative per wheel tick
 var _target_zoom: float = 1.0
@@ -25,10 +25,8 @@ func _ready() -> void:
 	cam.make_current()
 	_center_on_tiles()
 	_target_zoom = cam.zoom.x
-
-	# connect overlay mode signal
-	overlay.mode_changed.connect(func(m):
-		car.control_enabled = (m == overlay.MODE_DRIVE))
+	overlay.mode_changed.connect(_on_mode_changed)
+	
 	
 	var b := _compute_bounds_pixels_rebased()
 	if b.size == Vector2i.ZERO:
@@ -92,10 +90,16 @@ func _process(delta: float) -> void:
 		_pan_update(delta)
 
 func _unhandled_input(event: InputEvent) -> void:
+	if event is InputEventMouseButton:
+		print_debug("btn:", event.button_index, " pressed:", event.pressed)
 	# mouse wheel zoom
 	if event is InputEventMouseButton and event.pressed:
-		if event.button_index == MOUSE_BUTTON_WHEEL_UP:   _target_zoom /= zoom_step
-		if event.button_index == MOUSE_BUTTON_WHEEL_DOWN: _target_zoom *= zoom_step
+		if event.button_index == MOUSE_BUTTON_WHEEL_UP:   
+			_target_zoom /= zoom_step
+			if _target_zoom < zoom_min: _target_zoom = zoom_min
+		if event.button_index == MOUSE_BUTTON_WHEEL_DOWN: 
+			_target_zoom *= zoom_step
+			if _target_zoom > zoom_max : _target_zoom = zoom_max
 		if event.button_index == MOUSE_BUTTON_RIGHT:
 			_dragging = true
 			_drag_last = get_viewport().get_mouse_position()
@@ -106,8 +110,10 @@ func _unhandled_input(event: InputEvent) -> void:
 			_dragging = false
 
 	# keyboard shortcuts (mirror overlay)
-	if Input.is_action_just_pressed("drive_mode"): _on_mode_changed(MODE_DRIVE)
-	if Input.is_action_just_pressed("pan_mode"):   _on_mode_changed(MODE_PAN)	
+	if Input.is_action_just_pressed("drive_mode"): 
+		_on_mode_changed(MODE_DRIVE)
+	if Input.is_action_just_pressed("pan_mode"):   
+		_on_mode_changed(MODE_PAN)	
 	
 func _on_mode_changed(m: int) -> void:
 	_mode = m
