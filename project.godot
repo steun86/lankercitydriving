@@ -15,6 +15,10 @@ run/main_scene="uid://c4fhul52p4fcj"
 config/features=PackedStringArray("4.4", "Forward Plus")
 config/icon="res://icon.svg"
 
+[autoload]
+
+Boot="*res://autoload/boot.gd"
+
 [display]
 
 window/size/viewport_width=1920
@@ -24,6 +28,10 @@ window/stretch/mode="viewport"
 [dotnet]
 
 project/assembly_name="lankercitydriving"
+
+[editor_plugins]
+
+enabled=PackedStringArray()
 
 [input]
 

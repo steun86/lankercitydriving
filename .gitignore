@@ -1,5 +1,5 @@
 # Godot 4+ specific ignores
 .godot/
 /android/
-art/tiles_xyz/
 exported/
+tiles_xyz.zip

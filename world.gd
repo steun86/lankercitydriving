@@ -1,6 +1,6 @@
 extends Node2D
 
-@export_dir var tiles_root_path: String = "res://art/tiles_xyz"
+@export_dir var tiles_root_path: String = Boot.get_tile_base_url()
 @export var zoom_level: int = 19
 @export var tile_px: int = 512
 
@@ -21,7 +21,8 @@ var _mode: int = MODE_DRIVE
 var _dragging := false
 var _drag_last: Vector2
 
-func _ready() -> void:
+func _ready() -> void:	
+
 	cam.make_current()
 	_center_on_tiles()
 	_target_zoom = cam.zoom.x

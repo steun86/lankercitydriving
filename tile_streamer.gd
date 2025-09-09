@@ -5,7 +5,7 @@ extends Node2D
 ## Put a `.gdignore` file inside tiles_root_path so the editor won't import thousands of tiles.
 ##
 
-@export_dir var tiles_root_path: String = "res://art/tiles_xyz"
+#@export_dir var tiles_root_path: String = "res://tiles_xyz"
 @export var tile_px: int = 512            # 256 (default gdal2tiles) or 512 if you used --tilesize=512
 @export var load_radius: int = 2          # tiles beyond view to LOAD
 @export var unload_radius: int = 3        # tiles beyond view to KEEP (hysteresis)
@@ -16,6 +16,7 @@ extends Node2D
 @export var show_debug: bool = true
 @export var allow_manual_zoom: bool = true
 var _zoom_override: bool = false
+@onready var tile_base: String = Boot.get_tile_base_url()  # "res://tiles_xyz" or "https://lanker.toonlab.be/tiles"
 
 # Camera2D.zoom.x: smaller = zoomed out, larger = zoomed in
 # Map it to tile zooms from coarse→fine.
@@ -55,6 +56,14 @@ var _last_max_y_idx: int = -1
 var _last_cam_pos: Vector2 = Vector2.INF
 var _last_cam_zoom: float = -1.0
 
+func _join(base: String, rel: String) -> String:
+	return base.rstrip("/") + "/" + rel.lstrip("/")
+
+func _rel_tile_path(quality: int, tx: int, ty: int) -> String:
+	# If your files are named like "med/12_34.jpg"
+	return "%s/%d/%d.jpg" % [quality, tx, ty]
+
+
 func _ready() -> void:
 	_camera = get_viewport().get_camera_2d()
 	if _camera:
@@ -62,7 +71,7 @@ func _ready() -> void:
 
 	_zooms = _detect_available_zooms()
 	if _zooms.is_empty():
-		push_warning("TileStreamer: no zoom folders under %s" % tiles_root_path)
+		push_warning("TileStreamer: no zoom folders under %s" % tile_base)
 		set_process(false); return
 
 	# Define a single, fixed world origin from the highest zoom
@@ -99,7 +108,7 @@ func _process(dt: float) -> void:
 
 func _detect_available_zooms() -> Array[int]:
 	var out: Array[int] = []
-	var d := DirAccess.open(tiles_root_path)
+	var d := DirAccess.open(tile_base)
 	if d == null: return out
 	for name in d.get_directories():
 		if name.is_valid_int():
@@ -152,7 +161,7 @@ func _scan_bounds_for_zoom(z: int) -> bool:
 	_min_x = 2147483647; _min_y = 2147483647
 	_max_x = -2147483648; _max_y = -2147483648
 
-	var z_path := "%s/%d" % [tiles_root_path, z]
+	var z_path := "%s/%d" % [tile_base, z]
 	var dz := DirAccess.open(z_path)
 	if dz == null: return false
 
@@ -248,46 +257,42 @@ func _drain_queue() -> void:
 		var key: Vector3i = _load_queue.pop_front()
 		if key.x != _z_current: continue         # stale after zoom swap
 		if _loaded.has(key): continue
-		var tex := _load_tile_texture(key.x, key.y, key.z)
-		if tex == null: continue
-		var spr := Sprite2D.new()
-		spr.centered = false
-		spr.texture = tex
-		spr.z_index = -10
-		# Place in a SINGLE world space anchored to base origin
-		#var s2b: int = 1 << (_z_base - key.x)
+		#var tex := 
+		_load_tile(key.x, key.y, key.z)
+		#if tex == null: continue
+		#var spr := Sprite2D.new()
+		#spr.centered = false
+		#spr.texture = tex
+		#spr.z_index = -10
+				
+		## Scale from this tile's zoom to the base zoom (e.g. z20->z19 = 2x)
+		#var s2b: int = 1 << (_z_base - key.x)  # key.x is z
+		#spr.scale = Vector2(s2b, s2b)
+#
+		## Position in the fixed world (anchored at base_min_x/y)
 		#spr.position = Vector2(
 			#((key.y * s2b) - _base_min_x) * tile_px,
 			#((key.z * s2b) - _base_min_y) * tile_px
 		#)
-		
-		# Scale from this tile's zoom to the base zoom (e.g. z20->z19 = 2x)
-		var s2b: int = 1 << (_z_base - key.x)  # key.x is z
-		spr.scale = Vector2(s2b, s2b)
+#
+		#add_child(spr)
+		#_loaded[key] = spr
+		#if _loaded.size() > max_cache:
+			#_evict_some()
 
-		# Position in the fixed world (anchored at base_min_x/y)
-		spr.position = Vector2(
-			((key.y * s2b) - _base_min_x) * tile_px,
-			((key.z * s2b) - _base_min_y) * tile_px
-		)
-
-		add_child(spr)
-		_loaded[key] = spr
-		if _loaded.size() > max_cache:
-			_evict_some()
-
-func _load_tile_texture(z: int, x: int, y: int) -> Texture2D:
-	# Bypass importer; works with .gdignore
-	var p_png := "%s/%d/%d/%d.png" % [tiles_root_path, z, x, y]
-	var p_jpg := "%s/%d/%d/%d.jpg" % [tiles_root_path, z, x, y]
-	var img := Image.new()
-	var err := img.load(p_png)
-	if err != OK:
-		err = img.load(p_jpg)
-		if err != OK:
-			return null
-	# img.generate_mipmaps() # optional, if you zoom a lot
-	return ImageTexture.create_from_image(img)
+#old load tile
+#func _load_tile_texture(z: int, x: int, y: int) -> Texture2D:
+	## Bypass importer; works with .gdignore
+	#var p_png := "%s/%d/%d/%d.png" % [tiles_root_path, z, x, y]
+	#var p_jpg := "%s/%d/%d/%d.jpg" % [tiles_root_path, z, x, y]
+	#var img := Image.new()
+	#var err := img.load(p_png)
+	#if err != OK:
+		#err = img.load(p_jpg)
+		#if err != OK:
+			#return null
+	## img.generate_mipmaps() # optional, if you zoom a lot
+	#return ImageTexture.create_from_image(img)
 
 func _evict_some() -> void:
 	var cam_pos := _camera.global_position
@@ -364,3 +369,149 @@ func get_current_zoom() -> int:
 
 func is_zoom_overridden() -> bool:
 	return _zoom_override
+
+# SYNC (local) + ASYNC (remote) wrapper.
+# Call this inside your queue/visibility logic when you need a tile.
+func _load_tile(quality:int, tx:int, ty:int) -> void:
+	var rel := _rel_tile_path(quality, tx, ty)
+	var full := _join(tile_base, rel)
+
+	if tile_base.begins_with("res://"):
+		var tex := _load_texture_from_file(full)
+		if tex: _on_tile_ready(quality, tx, ty, tex)
+		return
+
+	var req := HTTPRequest.new()
+	add_child(req)
+	req.request_completed.connect(
+		func(result:int, code:int, _h:PackedStringArray, body:PackedByteArray) -> void:
+			req.queue_free()
+			if result != HTTPRequest.RESULT_SUCCESS or code != 200:
+				return
+			var img := Image.new()
+			if img.load_jpg_from_buffer(body) != OK and img.load_png_from_buffer(body) != OK:
+				return
+				
+			_on_tile_ready(quality, tx, ty, ImageTexture.create_from_image(img)), CONNECT_ONE_SHOT
+	)
+	var err := req.request(full)
+	if err != OK:
+		req.queue_free()
+
+
+
+func _load_texture_from_file(path: String) -> Texture2D:
+	# Works from res://, user://, and inside mounted .zip/.pck
+	if not FileAccess.file_exists(path):
+		push_warning("Tile missing: %s" % path)
+		return null
+
+	var bytes: PackedByteArray = FileAccess.get_file_as_bytes(path)
+	if bytes.is_empty():
+		push_warning("Tile empty/unreadable: %s" % path)
+		return null
+
+	var img := Image.new()
+	var ext := path.get_extension().to_lower()
+	var err := ERR_INVALID_DATA
+	if ext == "jpg" or ext == "jpeg":
+		err = img.load_jpg_from_buffer(bytes)
+	elif ext == "png":
+		err = img.load_png_from_buffer(bytes)
+	else:
+		# fallback, but should not be needed for tiles
+		img.load_from_file(path)
+
+	if err != OK:
+		push_warning("Failed to decode %s (%s)" % [path, err])
+		return null
+
+	return ImageTexture.create_from_image(img)
+
+
+# Fire-and-forget async HTTP download; calls _on_tile_ready when done
+func _load_texture_from_http_async(url:String, quality:int, tx:int, ty:int) -> void:
+	var req := HTTPRequest.new()
+	add_child(req)
+	var e := req.request(url)
+	if e != OK:
+		req.queue_free()
+		return
+
+	# 1) await → array [result, code, headers, body]
+	var resp : Variant= await req.request_completed
+	req.queue_free()
+
+	# 2) pull out values (typed or untyped)
+	var result:int = resp[0]
+	var code:int = resp[1]
+	var headers:PackedStringArray = resp[2]
+	var body:PackedByteArray = resp[3]
+
+	if result != HTTPRequest.RESULT_SUCCESS or code != 200:
+		return
+
+	var img := Image.new()
+	var ok := img.load_jpg_from_buffer(body)
+	if ok != OK:
+		ok = img.load_png_from_buffer(body)
+		if ok != OK:
+			return
+
+	var tex := ImageTexture.create_from_image(img)
+	_on_tile_ready(quality, tx, ty, tex)
+
+
+
+func _on_tile_ready(quality: int, tx: int, ty: int, tex: Texture2D) -> void:
+	# If you key by quality+coords, build the key the same way you do elsewhere
+	#var key := "%s/%d/%d" % [quality, tx, ty]
+	var key := Vector3i(quality, tx, ty)
+	# Cache (optional)
+	# _cache_put(key, tex)
+
+	# Create/update a Sprite2D (example; keep your own implementation)
+	var spr := Sprite2D.new()
+	spr.texture = tex
+	spr.centered = false
+	spr.z_index = -10
+	# Position/scale to your world units (adjust to your map scale)
+	#spr.position = Vector2(tx * world_tile_size, ty * world_tile_size)
+	#spr.scale = Vector2(world_tile_size / float(tile_px), world_tile_size / float(tile_px))
+#
+	#add_child(spr)
+	#_sprites[key] = spr
+	
+	## Scale from this tile's zoom to the base zoom (e.g. z20->z19 = 2x)
+	var s2b: int = 1 << (_z_base - quality)  # key.x is z
+	spr.scale = Vector2(s2b, s2b)
+
+	# Position in the fixed world (anchored at base_min_x/y)
+	spr.position = Vector2(
+		((tx * s2b) - _base_min_x) * tile_px,
+		((ty * s2b) - _base_min_y) * tile_px
+	)
+
+	add_child(spr)
+	_loaded[key] = spr
+	if _loaded.size() > max_cache:
+		_evict_some()
+	
+	
+
+func _on_http_completed(result:int, code:int, _h:PackedStringArray, body:PackedByteArray,
+		req:HTTPRequest, quality:int, tx:int, ty:int, url:String) -> void:
+	req.queue_free()
+	if result != HTTPRequest.RESULT_SUCCESS or code != 200:
+		# optional: retry / fallback
+		return
+
+	var img := Image.new()
+	var ok := img.load_jpg_from_buffer(body)
+	if ok != OK:
+		ok = img.load_png_from_buffer(body)
+		if ok != OK:
+			return
+
+	var tex := ImageTexture.create_from_image(img)
+	_on_tile_ready(quality, tx, ty, tex)
